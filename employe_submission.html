@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Process Health Check | DMAIC Dashboard</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .dmaic-section {
+            margin-bottom: 30px;
+            border: 2px solid var(--light);
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .dmaic-section:hover {
+            border-color: var(--secondary);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light);
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border 0.3s ease;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+        
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--light);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-item:hover {
+            background: #dfe6e9;
+        }
+        
+        .checkbox-item input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .metric-display {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, var(--success), #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto 0;
+            font-weight: 600;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.5s ease;
+        }
+        
+        .department-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .dept-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--secondary);
+            background: white;
+            color: var(--secondary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .dept-btn.active {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .warning-message {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Process Health Check</h1>
+            <p>DMAIC Framework - Training Effectiveness Monitoring</p>
+        </div>
+        
+        <div class="form-container">
+            <!-- Warning Message -->
+            <div class="warning-message">
+                ⚠️ <strong>Important:</strong> This form works only when provided by management. 
+                If you opened this directly from a file, data will not reach your manager.
+            </div>
+
+            <!-- Employee Selection -->
+            <div class="form-group">
+                <label for="employee_name">Select Your Name:</label>
+                <select id="employee_name" name="employee_name" required>
+                    <option value="">-- Select Your Name --</option>
+                </select>
+            </div>
+
+            <!-- Department Selection -->
+            <div class="form-group">
+                <label>Select Your Department:</label>
+                <div class="department-selector">
+                    <button type="button" class="dept-btn active" data-dept="OPS">Operations</button>
+                    <button type="button" class="dept-btn" data-dept="Sales">Sales</button>
+                    <button type="button" class="dept-btn" data-dept="Store">Store</button>
+                    <button type="button" class="dept-btn" data-dept="Logistics">Logistics</button>
+                    <button type="button" class="dept-btn" data-dept="Warranty">Warranty</button>
+                    <button type="button" class="dept-btn" data-dept="Billing">Billing</button>
+                </div>
+                <input type="hidden" id="department" name="department" value="OPS">
+            </div>
+
+            <!-- DEFINE Section -->
+            <div class="dmaic-section">
+                <div class="section-header">
+                    <div class="section-icon">D</div>
+                    <div class="section-title">DEFINE - Daily Goals & Resources</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="primary_goal">1. Primary Process/Output Goal for Today:</label>
+                    <select id="primary_goal" name="primary_goal" required>
+                        <option value="">Select your primary goal...</option>
+                        <option value="process_orders">Process Customer Orders</option>
+                        <option value="quality_check">Quality Assurance Tasks</option>
+                        <option value="customer_interaction">Customer Calls/Meetings</option>
+                        <option value="inventory_management">Inventory Management</option>
+                        <option value="documentation">Documentation & Reporting</option>
+                        <option value="problem_resolution">Problem Resolution</option>
+                        <option value="other">Other (Specify in comments)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target_metric">2. Daily Target Metric (Numerical):</label>
+                    <input type="number" id="target_metric" name="target_metric" placeholder="e.g., 150 orders, 20 calls" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>3. Resource Availability for Today:</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="resources[]" value="tools_available"> Required Tools Available
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="resources[]" value="information_available"> Complete Information
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="resources[]" value="system_access"> System Access Functional
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="resources[]" value="team_support"> Team Support Available
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MEASURE Section -->
+            <div class="dmaic-section">
+                <div class="section-header">
+                    <div class="section-icon">M</div>
+                    <div class="section-title">MEASURE - Actual Performance</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="actual_output">1. Actual Output Achieved:</label>
+                    <input type="number" id="actual_output" name="actual_output" placeholder="Enter actual number achieved" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>2. Process Adherence Metrics (Must be 100%):</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="adherence[]" value="accuracy_100" class="critical-metric"> Accuracy/Error-Free Work
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="adherence[]" value="procedure_100" class="critical-metric"> Standard Procedure Followed
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="adherence[]" value="timeliness_100" class="critical-metric"> On-Time Completion
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="adherence[]" value="data_integrity_100" class="critical-metric"> Data Integrity Maintained
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quality_score">3. Self-Assessed Quality Score (1-10):</label>
+                    <input type="range" id="quality_score" name="quality_score" min="1" max="10" value="8">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>1 (Poor)</span>
+                        <span id="quality_value">8</span>
+                        <span>10 (Excellent)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYZE Section -->
+            <div class="dmaic-section">
+                <div class="section-header">
+                    <div class="section-icon">A</div>
+                    <div class="section-title">ANALYZE - Gap Identification</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gap_reason">1. Primary Reason for Performance Gaps (if any):</label>
+                    <select id="gap_reason" name="gap_reason">
+                        <option value="">Select primary reason...</option>
+                        <option value="training_refresher_needed">Needed Procedure/Training Refresher</option>
+                        <option value="unforeseen_issue">Unforeseen Issue Not Covered in Training</option>
+                        <option value="system_malfunction">System/Tool Malfunction</option>
+                        <option value="information_gap">Information Gap from Other Department</option>
+                        <option value="time_constraint">Time Constraint / Workload</option>
+                        <option value="no_gaps">No Significant Gaps Today</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="training_gap">2. Training Knowledge Gap Encountered:</label>
+                    <select id="training_gap" name="training_gap">
+                        <option value="none">No Training Gaps Today</option>
+                        <option value="process_knowledge">Process Knowledge Gap</option>
+                        <option value="tool_usage">Tool/System Usage</option>
+                        <option value="problem_solving">Problem-Solving Approach</option>
+                        <option value="communication">Communication Protocol</option>
+                        <option value="other_training">Other Training Need</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="issue_description">3. Brief Description of Key Issue Faced:</label>
+                    <textarea id="issue_description" name="issue_description" rows="3" placeholder="Describe any significant challenge faced today..."></textarea>
+                </div>
+            </div>
+
+            <!-- IMPROVE & CONTROL Section -->
+            <div class="dmaic-section">
+                <div class="section-header">
+                    <div class="section-icon">I&C</div>
+                    <div class="section-title">IMPROVE & CONTROL - Action Plan</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="corrective_action">1. Corrective/Preventive Action Taken:</label>
+                    <select id="corrective_action" name="corrective_action">
+                        <option value="">Select action taken...</option>
+                        <option value="procedure_followed">Followed Standard Procedure</option>
+                        <option value="escalated_issue">Escalated to Supervisor</option>
+                        <option value="peer_support">Sought Peer Support</option>
+                        <option value="documented_issue">Documented for Process Improvement</option>
+                        <option value="self_resolved">Self-Resolved with Existing Knowledge</option>
+                        <option value="no_action">No Specific Action Required</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="process_stability">2. Process Stability for Tomorrow:</label>
+                    <select id="process_stability" name="process_stability" required>
+                        <option value="high">High - Confident in Repeating Success</option>
+                        <option value="medium">Medium - Can Succeed with Some Support</option>
+                        <option value="low">Low - Requires Significant Intervention</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="improvement_suggestion">3. Suggestion for Process/Training Improvement:</label>
+                    <textarea id="improvement_suggestion" name="improvement_suggestion" rows="3" placeholder="Your suggestions for better training or processes..."></textarea>
+                </div>
+            </div>
+
+            <!-- Metrics Summary -->
+            <div class="metric-display" id="metricSummary">
+                <h3>Daily Performance Summary</h3>
+                <div class="metric-row">
+                    <span>Goal Achievement Rate:</span>
+                    <span id="goalRate">0%</span>
+                </div>
+                <div class="metric-row">
+                    <span>Process Adherence Score:</span>
+                    <span id="adherenceScore">0%</span>
+                </div>
+                <div class="metric-row">
+                    <span>Training Effectiveness Indicator:</span>
+                    <span id="trainingScore">0%</span>
+                </div>
+                <div class="metric-row">
+                    <span>Overall Daily Score:</span>
+                    <span id="overallScore">0%</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" onclick="submitForm()">Submit Daily Report</button>
+        </div>
+    </div>
+
+    <script>
+        // Load employees into dropdown
+        function loadEmployees() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const select = document.getElementById('employee_name');
+            select.innerHTML = '<option value="">-- Select Your Name --</option>';
+            
+            if (employees.length === 0) {
+                const option = document.createElement('option');
+                option.value = "not_found";
+                option.textContent = "No employees found - contact admin";
+                select.appendChild(option);
+                return;
+            }
+            
+            employees.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = `${emp.name} (${emp.department})`;
+                select.appendChild(option);
+            });
+        }
+
+        // Department Selection
+        document.querySelectorAll('.dept-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('department').value = this.dataset.dept;
+            });
+        });
+
+        // Quality Score Display
+        const qualitySlider = document.getElementById('quality_score');
+        const qualityValue = document.getElementById('quality_value');
+        
+        qualitySlider.addEventListener('input', function() {
+            qualityValue.textContent = this.value;
+        });
+
+        // Real-time Metric Calculation
+        function calculateMetrics() {
+            const target = parseInt(document.getElementById('target_metric').value) || 1;
+            const actual = parseInt(document.getElementById('actual_output').value) || 0;
+            const criticalMetrics = document.querySelectorAll('.critical-metric:checked').length;
+            const totalMetrics = document.querySelectorAll('.critical-metric').length;
+            
+            const goalRate = Math.min((actual / target) * 100, 100);
+            const adherenceScore = (criticalMetrics / totalMetrics) * 100;
+            
+            // Training effectiveness calculation
+            const trainingScore = goalRate * 0.4 + adherenceScore * 0.6;
+            const overallScore = (goalRate + adherenceScore + trainingScore) / 3;
+            
+            document.getElementById('goalRate').textContent = goalRate.toFixed(1) + '%';
+            document.getElementById('adherenceScore').textContent = adherenceScore.toFixed(1) + '%';
+            document.getElementById('trainingScore').textContent = trainingScore.toFixed(1) + '%';
+            document.getElementById('overallScore').textContent = overallScore.toFixed(1) + '%';
+            
+            document.getElementById('metricSummary').style.display = 'block';
+        }
+
+        // Add event listeners for real-time calculation
+        document.getElementById('target_metric').addEventListener('input', calculateMetrics);
+        document.getElementById('actual_output').addEventListener('input', calculateMetrics);
+        document.querySelectorAll('.critical-metric').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateMetrics);
+        });
+
+        // Form Submission
+        function submitForm() {
+            const employeeSelect = document.getElementById('employee_name');
+            if (!employeeSelect.value || employeeSelect.value === "not_found") {
+                alert('Please select your name from the list. If no names appear, contact your administrator.');
+                return;
+            }
+
+            calculateMetrics();
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const selectedEmployee = employees.find(emp => emp.id == employeeSelect.value);
+            
+            if (!selectedEmployee) {
+                alert('Selected employee not found. Please contact administrator.');
+                return;
+            }
+            
+            const formData = {
+                submission_id: `DMAIC-${new Date().toISOString().split('T')[0]}-${document.getElementById('department').value}-${Date.now()}`,
+                employee_id: selectedEmployee.id,
+                employee_name: selectedEmployee.name,
+                department: document.getElementById('department').value,
+                date: new Date().toISOString().split('T')[0],
+                timestamp: new Date().toISOString(),
+                define_phase: {
+                    primary_goal: document.getElementById('primary_goal').value,
+                    target_metric: parseInt(document.getElementById('target_metric').value) || 0,
+                    resource_availability: Array.from(document.querySelectorAll('input[name="resources[]"]:checked')).map(cb => cb.value),
+                    resource_score: (Array.from(document.querySelectorAll('input[name="resources[]"]:checked')).length / 4) * 100
+                },
+                measure_phase: {
+                    actual_output: parseInt(document.getElementById('actual_output').value) || 0,
+                    adherence_metrics: Array.from(document.querySelectorAll('.critical-metric:checked')).map(cb => cb.value),
+                    adherence_score: (Array.from(document.querySelectorAll('.critical-metric:checked')).length / 4) * 100,
+                    quality_score: parseInt(document.getElementById('quality_score').value),
+                    goal_achievement_rate: parseFloat(document.getElementById('goalRate').textContent)
+                },
+                analyze_phase: {
+                    gap_reason: document.getElementById('gap_reason').value,
+                    training_gap: document.getElementById('training_gap').value,
+                    issue_description: document.getElementById('issue_description').value
+                },
+                improve_control_phase: {
+                    corrective_action: document.getElementById('corrective_action').value,
+                    process_stability: document.getElementById('process_stability').value,
+                    improvement_suggestion: document.getElementById('improvement_suggestion').value
+                },
+                performance_metrics: {
+                    goal_achievement_rate: parseFloat(document.getElementById('goalRate').textContent),
+                    process_adherence_score: parseFloat(document.getElementById('adherenceScore').textContent),
+                    training_effectiveness_score: parseFloat(document.getElementById('trainingScore').textContent),
+                    overall_daily_score: parseFloat(document.getElementById('overallScore').textContent)
+                },
+                training_effectiveness_indicators: {
+                    needs_refresher_training: document.getElementById('gap_reason').value === 'training_refresher_needed',
+                    new_training_required: document.getElementById('training_gap').value !== 'none',
+                    process_stability_issue: document.getElementById('process_stability').value !== 'high',
+                    knowledge_gap_identified: document.getElementById('training_gap').value
+                }
+            };
+            
+            // Save to local storage
+            let allSubmissions = JSON.parse(localStorage.getItem('dmaicSubmissions') || '[]');
+            allSubmissions.push(formData);
+            localStorage.setItem('dmaicSubmissions', JSON.stringify(allSubmissions));
+            
+            console.log('Form Data Saved:', formData);
+            alert('✅ Daily report submitted successfully!\n\nNote: This data is saved locally on your computer. For management to see it, this system must be properly deployed.');
+            
+            // Reset form
+            document.querySelector('form').reset();
+            document.getElementById('metricSummary').style.display = 'none';
+            qualityValue.textContent = '8';
+        }
+
+        // Initialize
+        loadEmployees();
+        calculateMetrics();
+    </script>
+</body>
+</html>

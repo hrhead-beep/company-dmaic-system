@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMAIC Management Dashboard - Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f5f6fa; padding: 20px; }
+        .dashboard { max-width: 1400px; margin: 0 auto; }
+        .header { background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .filters { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
+        .filter-btn { padding: 10px 20px; background: white; border: 2px solid #3498db; border-radius: 25px; cursor: pointer; }
+        .filter-btn.active { background: #3498db; color: white; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+        .metric-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .metric-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+        .progress-bar { height: 10px; background: #ecf0f1; border-radius: 5px; margin: 10px 0; }
+        .progress-fill { height: 100%; border-radius: 5px; }
+        .table-container { background: white; border-radius: 10px; padding: 20px; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: 600; position: sticky; top: 0; }
+        .high-score { color: #27ae60; font-weight: bold; }
+        .medium-score { color: #f39c12; font-weight: bold; }
+        .low-score { color: #e74c3c; font-weight: bold; }
+        .export-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: auto; }
+        .timestamp { font-size: 0.9em; color: #7f8c8d; }
+        .admin-panel { background: #e8f4fd; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #3498db; }
+        .employee-list { max-height: 200px; overflow-y: auto; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: white; }
+        .employee-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; }
+        .employee-item:last-child { border-bottom: none; }
+        .delete-btn { background: #e74c3c; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .add-employee-form { display: flex; gap: 10px; margin-top: 15px; }
+        .add-employee-form input, .add-employee-form select { padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+        .add-btn { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🚀 DMAIC Management Dashboard - Admin Panel</h1>
+            <p>Complete employee management and performance monitoring system</p>
+        </div>
+
+        <!-- ADMIN PANEL - Employee Management -->
+        <div class="admin-panel">
+            <h3>👥 Employee Management</h3>
+            <div class="add-employee-form">
+                <input type="text" id="newEmployeeName" placeholder="Enter employee name" style="flex: 1;">
+                <select id="newEmployeeDept">
+                    <option value="OPS">Operations</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Store">Store</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="Warranty">Warranty</option>
+                    <option value="Billing">Billing</option>
+                </select>
+                <button class="add-btn" onclick="addEmployee()">Add Employee</button>
+            </div>
+            
+            <div class="employee-list" id="employeeList">
+                <!-- Employee list will be populated here -->
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                💡 <strong>Deployment Tip:</strong> Share the employee_form.html file with your team. 
+                They will see the employees you add here.
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterData('all')">All Departments</button>
+            <button class="filter-btn" onclick="filterData('OPS')">Operations</button>
+            <button class="filter-btn" onclick="filterData('Sales')">Sales</button>
+            <button class="filter-btn" onclick="filterData('Logistics')">Logistics</button>
+            <button class="filter-btn" onclick="filterData('Warranty')">Warranty</button>
+            <button class="filter-btn" onclick="filterData('Billing')">Billing</button>
+            <select id="dateFilter" onchange="filterByDate()">
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+            </select>
+            <button class="export-btn" onclick="exportData()">Export Data</button>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Overall Training Effectiveness</h3>
+                <div class="metric-value" id="overallScore">0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="overallProgress" style="width: 0%; background: #27ae60;"></div>
+                </div>
+                <p>Average score across all departments</p>
+            </div>
+            <div class="metric-card">
+                <h3>Process Adherence</h3>
+                <div class="metric-value" id="adherenceScore">0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="adherenceProgress" style="width: 0%; background: #3498db;"></div>
+                </div>
+                <p>Standard procedure compliance</p>
+            </div>
+            <div class="metric-card">
+                <h3>Goal Achievement</h3>
+                <div class="metric-value" id="goalScore">0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="goalProgress" style="width: 0%; background: #9b59b6;"></div>
+                </div>
+                <p>Daily target completion rate</p>
+            </div>
+            <div class="metric-card">
+                <h3>Training Gaps Identified</h3>
+                <div class="metric-value" id="gapsCount">0</div>
+                <p>Areas needing training intervention</p>
+            </div>
+        </div>
+
+        <!-- Detailed Data Table -->
+        <div class="table-container">
+            <h3>Daily Performance Data</h3>
+            <table id="performanceTable">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Goal Achievement</th>
+                        <th>Process Adherence</th>
+                        <th>Training Score</th>
+                        <th>Overall Score</th>
+                        <th>Primary Gap</th>
+                        <th>Stability</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Training Effectiveness Chart -->
+        <div class="table-container">
+            <h3>Training Gap Analysis</h3>
+            <div id="trainingGapsChart">
+                <div style="margin: 15px 0;">
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Procedure Knowledge: <span id="knowledgeGap">0%</span> of gaps</span>
+                        <div style="width: 60%; background: #ecf0f1; border-radius: 5px;">
+                            <div id="knowledgeBar" style="width: 0%; height: 20px; background: #e74c3c; border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Tool Usage: <span id="toolGap">0%</span> of gaps</span>
+                        <div style="width: 60%; background: #ecf0f1; border-radius: 5px;">
+                            <div id="toolBar" style="width: 0%; height: 20px; background: #f39c12; border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Problem Solving: <span id="problemGap">0%</span> of gaps</span>
+                        <div style="width: 60%; background: #ecf0f1; border-radius: 5px;">
+                            <div id="problemBar" style="width: 0%; height: 20px; background: #3498db; border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Communication: <span id="commGap">0%</span> of gaps</span>
+                        <div style="width: 60%; background: #ecf0f1; border-radius: 5px;">
+                            <div id="commBar" style="width: 0%; height: 20px; background: #27ae60; border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Employee Management Functions
+        function loadEmployees() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employeeList = document.getElementById('employeeList');
+            employeeList.innerHTML = '';
+            
+            if (employees.length === 0) {
+                employeeList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No employees added yet</div>';
+                return;
+            }
+            
+            employees.forEach(emp => {
+                const empItem = document.createElement('div');
+                empItem.className = 'employee-item';
+                empItem.innerHTML = `
+                    <span><strong>${emp.name}</strong> - ${emp.department}</span>
+                    <button class="delete-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
+                `;
+                employeeList.appendChild(empItem);
+            });
+        }
+
+        function addEmployee() {
+            const nameInput = document.getElementById('newEmployeeName');
+            const deptSelect = document.getElementById('newEmployeeDept');
+            
+            if (!nameInput.value.trim()) {
+                alert('Please enter employee name');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const newEmployee = {
+                id: Date.now(), // Unique ID
+                name: nameInput.value.trim(),
+                department: deptSelect.value
+            };
+            
+            employees.push(newEmployee);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            loadEmployees();
+            nameInput.value = '';
+            alert('Employee added successfully!');
+        }
+
+        function deleteEmployee(employeeId) {
+            if (!confirm('Are you sure you want to delete this employee?')) {
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const filteredEmployees = employees.filter(emp => emp.id !== employeeId);
+            localStorage.setItem('employees', JSON.stringify(filteredEmployees));
+            
+            loadEmployees();
+            alert('Employee deleted successfully!');
+        }
+
+        // Load real data from employee form submissions
+        function loadRealData() {
+            const savedData = JSON.parse(localStorage.getItem('dmaicSubmissions') || '[]');
+            
+            if (savedData.length === 0) {
+                return [{
+                    id: "NO-DATA",
+                    employee_name: "No submissions yet",
+                    department: "N/A",
+                    date: new Date().toISOString().split('T')[0],
+                    timestamp: new Date().toISOString(),
+                    metrics: {
+                        goal_achievement_rate: 0,
+                        process_adherence_score: 0,
+                        training_effectiveness_score: 0,
+                        overall_daily_score: 0
+                    },
+                    gap_reason: "no_data",
+                    training_gap: "none",
+                    process_stability: "medium"
+                }];
+            }
+            
+            // Convert to dashboard format
+            return savedData.map(item => ({
+                id: item.submission_id,
+                employee_name: item.employee_name,
+                department: item.department,
+                date: item.date,
+                timestamp: item.timestamp,
+                metrics: item.performance_metrics,
+                gap_reason: item.analyze_phase.gap_reason,
+                training_gap: item.analyze_phase.training_gap,
+                process_stability: item.improve_control_phase.process_stability
+            }));
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            // Sort by timestamp descending (newest first)
+            data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                const scoreClass = item.metrics.overall_daily_score >= 80 ? 'high-score' : 
+                                 item.metrics.overall_daily_score >= 60 ? 'medium-score' : 'low-score';
+                
+                // Format timestamp
+                const submissionTime = new Date(item.timestamp);
+                const timeString = `${item.date} ${submissionTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                
+                row.innerHTML = `
+                    <td class="timestamp">${timeString}</td>
+                    <td>${item.employee_name}</td>
+                    <td>${item.department}</td>
+                    <td>${item.metrics.goal_achievement_rate.toFixed(1)}%</td>
+                    <td>${item.metrics.process_adherence_score.toFixed(1)}%</td>
+                    <td>${item.metrics.training_effectiveness_score.toFixed(1)}%</td>
+                    <td class="${scoreClass}">${item.metrics.overall_daily_score.toFixed(1)}%</td>
+                    <td>${formatGapReason(item.training_gap)}</td>
+                    <td>${formatStability(item.process_stability)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updateSummaryMetrics(data);
+            updateGapAnalysis(data);
+        }
+
+        function formatGapReason(gap) {
+            const gapMap = {
+                'none': 'No Gaps',
+                'process_knowledge': 'Procedure Knowledge',
+                'tool_usage': 'Tool Usage',
+                'problem_solving': 'Problem Solving',
+                'communication': 'Communication',
+                'other_training': 'Other Training',
+                'no_data': 'No Data'
+            };
+            return gapMap[gap] || gap;
+        }
+
+        function formatStability(stability) {
+            const stabilityMap = {
+                'high': '🟢 High',
+                'medium': '🟡 Medium', 
+                'low': '🔴 Low'
+            };
+            return stabilityMap[stability] || stability;
+        }
+
+        function updateSummaryMetrics(data) {
+            if (data.length === 0 || data[0].id === "NO-DATA") {
+                document.getElementById('overallScore').textContent = '0%';
+                document.getElementById('adherenceScore').textContent = '0%';
+                document.getElementById('goalScore').textContent = '0%';
+                document.getElementById('gapsCount').textContent = '0';
+                return;
+            }
+
+            const overallAvg = data.reduce((sum, item) => sum + item.metrics.overall_daily_score, 0) / data.length;
+            const adherenceAvg = data.reduce((sum, item) => sum + item.metrics.process_adherence_score, 0) / data.length;
+            const goalAvg = data.reduce((sum, item) => sum + item.metrics.goal_achievement_rate, 0) / data.length;
+            const gapsCount = data.filter(item => item.training_gap !== 'none' && item.training_gap !== 'no_data').length;
+
+            document.getElementById('overallScore').textContent = overallAvg.toFixed(0) + '%';
+            document.getElementById('adherenceScore').textContent = adherenceAvg.toFixed(0) + '%';
+            document.getElementById('goalScore').textContent = goalAvg.toFixed(0) + '%';
+            document.getElementById('gapsCount').textContent = gapsCount;
+
+            // Update progress bars
+            document.getElementById('overallProgress').style.width = overallAvg.toFixed(0) + '%';
+            document.getElementById('adherenceProgress').style.width = adherenceAvg.toFixed(0) + '%';
+            document.getElementById('goalProgress').style.width = goalAvg.toFixed(0) + '%';
+        }
+
+        function updateGapAnalysis(data) {
+            if (data.length === 0 || data[0].id === "NO-DATA") {
+                document.getElementById('knowledgeGap').textContent = '0%';
+                document.getElementById('toolGap').textContent = '0%';
+                document.getElementById('problemGap').textContent = '0%';
+                document.getElementById('commGap').textContent = '0%';
+                return;
+            }
+
+            const gaps = data.filter(item => item.training_gap !== 'none' && item.training_gap !== 'no_data');
+            const totalGaps = gaps.length;
+
+            if (totalGaps === 0) {
+                document.getElementById('knowledgeGap').textContent = '0%';
+                document.getElementById('toolGap').textContent = '0%';
+                document.getElementById('problemGap').textContent = '0%';
+                document.getElementById('commGap').textContent = '0%';
+                return;
+            }
+
+            const knowledgeGaps = gaps.filter(item => item.training_gap === 'process_knowledge').length;
+            const toolGaps = gaps.filter(item => item.training_gap === 'tool_usage').length;
+            const problemGaps = gaps.filter(item => item.training_gap === 'problem_solving').length;
+            const commGaps = gaps.filter(item => item.training_gap === 'communication').length;
+
+            document.getElementById('knowledgeGap').textContent = Math.round((knowledgeGaps / totalGaps) * 100) + '%';
+            document.getElementById('toolGap').textContent = Math.round((toolGaps / totalGaps) * 100) + '%';
+            document.getElementById('problemGap').textContent = Math.round((problemGaps / totalGaps) * 100) + '%';
+            document.getElementById('commGap').textContent = Math.round((commGaps / totalGaps) * 100) + '%';
+
+            document.getElementById('knowledgeBar').style.width = (knowledgeGaps / totalGaps) * 100 + '%';
+            document.getElementById('toolBar').style.width = (toolGaps / totalGaps) * 100 + '%';
+            document.getElementById('problemBar').style.width = (problemGaps / totalGaps) * 100 + '%';
+            document.getElementById('commBar').style.width = (commGaps / totalGaps) * 100 + '%';
+        }
+
+        function filterData(department) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const allData = loadRealData();
+            const filteredData = department === 'all' ? allData : allData.filter(item => item.department === department);
+            renderTable(filteredData);
+        }
+
+        function filterByDate() {
+            const days = parseInt(document.getElementById('dateFilter').value);
+            const allData = loadRealData();
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            
+            const filteredData = allData.filter(item => new Date(item.timestamp) >= cutoffDate);
+            renderTable(filteredData);
+        }
+
+        function exportData() {
+            const data = loadRealData();
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'dmaic-training-data.csv');
+        }
+
+        function convertToCSV(data) {
+            const headers = ['Date', 'Time', 'Employee', 'Department', 'Goal Achievement', 'Process Adherence', 'Training Score', 'Overall Score', 'Training Gap', 'Stability'];
+            const rows = data.map(item => {
+                const time = new Date(item.timestamp);
+                return [
+                    item.date,
+                    time.toLocaleTimeString(),
+                    `"${item.employee_name}"`,
+                    item.department,
+                    item.metrics.goal_achievement_rate.toFixed(1) + '%',
+                    item.metrics.process_adherence_score.toFixed(1) + '%',
+                    item.metrics.training_effectiveness_score.toFixed(1) + '%',
+                    item.metrics.overall_daily_score.toFixed(1) + '%',
+                    formatGapReason(item.training_gap),
+                    formatStability(item.process_stability).replace(/[🔴🟡🟢]/g, '')
+                ];
+            });
+            
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', filename);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Initialize dashboard with real data
+        loadEmployees();
+        const realData = loadRealData();
+        renderTable(realData);
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            const realData = loadRealData();
+            renderTable(realData);
+        }, 30000);
+    </script>
+</body>
+</html>
